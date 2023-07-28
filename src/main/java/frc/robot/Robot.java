@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj.TimedRobot;
 
 // Systems
 import frc.robot.systems.ElevatorArmFSM;
-import frc.robot.HardwareMap;
 import frc.robot.systems.SpinningIntakeFSM;
 
 /**
