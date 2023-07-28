@@ -22,6 +22,7 @@ public class TeleopInput {
 	private static final int WRIST_UP = 6;
 	private static final int WRIST_DOWN = 4;
 	private static final int FINE_TUNING_BUTTON = 2;
+	private static final int INTAKE_TOGGLE_BUTTON = 10;
 
 	/* ======================== Private variables ======================== */
 	// Input objects
@@ -67,7 +68,7 @@ public class TeleopInput {
 	 * @return True if button is pressed
 	 */
 	public boolean isIntakeButtonPressed() {
-		return leftJoystick.getRawButton(10);
+		return leftJoystick.getRawButton(INTAKE_TOGGLE_BUTTON);
 	}
 
 	/**
@@ -141,7 +142,7 @@ public class TeleopInput {
 	public boolean isFineTuningButtonPressed() {
 		return leftJoystick.getRawButton(FINE_TUNING_BUTTON);
 	}
-	
+
 	/**
 	 * Get the value of the throttle.
 	 * @return True throttle is forward

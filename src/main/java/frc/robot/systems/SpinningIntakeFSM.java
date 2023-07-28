@@ -2,7 +2,6 @@ package frc.robot.systems;
 // WPILib Imports
 import edu.wpi.first.wpilibj.Timer;
 
-import frc.robot.Robot;
 
 
 // Third party Hardware Imports
@@ -297,13 +296,13 @@ public class SpinningIntakeFSM {
 			} else {
 				spinnerMotor.set(RELEASE_SPEED_LOW);
 			}
-		} else {
+		} // else {
 			/*if (AutoPathChooser.getSelectedNode() == 0) {
 				spinnerMotor.set(RELEASE_SPEED_LOW);
 			} else {
 				spinnerMotor.set(RELEASE_SPEED);
 			}*/
-		}
+		//}
 		itemType = ItemType.EMPTY;
 		isMotorAllowed = true;
 	}

@@ -128,6 +128,8 @@ public class ElevatorArmFSM {
 			default:
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
+		SmartDashboard.putString("Current State", currentState.toString());
+		SmartDashboard.putNumber("Elevator Encoder", armMotor.getEncoder().getPosition());
 		currentState = nextState(input);
 	}
 
