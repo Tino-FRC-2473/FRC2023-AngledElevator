@@ -24,12 +24,14 @@ public final class HardwareMap {
 	private static final int DIO_ELEVATOR_ARM_CHANNEL = 8;
 	private static final int DIO_WRIST_CHANNEL = 7;
 
-	private static DigitalInput testBoardPin = new DigitalInput(HardwareMap.DIO_SPINNING_INTAKE_CHANNEL);
-	private static DigitalInput elevatorArmPin = new DigitalInput(HardwareMap.DIO_ELEVATOR_ARM_CHANNEL);
+	private static DigitalInput testBoardPin = new DigitalInput(
+			HardwareMap.DIO_SPINNING_INTAKE_CHANNEL);
+	private static DigitalInput elevatorArmPin = new DigitalInput(
+			HardwareMap.DIO_ELEVATOR_ARM_CHANNEL);
 	private static DigitalInput wristPin = new DigitalInput(HardwareMap.DIO_WRIST_CHANNEL);
 
 	/**
-	 * Check if the current RoboRIO has spinning intake disabled
+	 * Check if the current RoboRIO has spinning intake disabled.
 	 * @return true if the spinning intake is disabled
 	 */
 	public static boolean isSpinningIntakeDisabled() {
@@ -37,7 +39,7 @@ public final class HardwareMap {
 	}
 
 	/**
-	 * Check if the current RoboRIO has elevator arm disabled
+	 * Check if the current RoboRIO has elevator arm disabled.
 	 * @return true if the elevtor arm is disabled
 	 */
 	public static boolean isElevatorArmDisabled() {
@@ -45,7 +47,7 @@ public final class HardwareMap {
 	}
 
 	/**
-	 * Check if the current RoboRIO has wrist disabled
+	 * Check if the current RoboRIO has wrist disabled.
 	 * @return true if the wrist is disabled
 	 */
 	public static boolean isWristDisabled() {
