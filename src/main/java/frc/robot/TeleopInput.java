@@ -19,8 +19,8 @@ public class TeleopInput {
 	private static final int ELEVATOR_LOW = 11;
 	private static final int ELEVATOR_UP = 3;
 	private static final int ELEVATOR_DOWN = 5;
-	private static final int WRIST_UP = 6;
-	private static final int WRIST_DOWN = 4;
+	private static final int WRIST_IN = 6;
+	private static final int WRIST_OUT = 4;
 	private static final int FINE_TUNING_BUTTON = 2;
 	private static final int INTAKE_TOGGLE_BUTTON = 10;
 	private static final int ARM_ZERO_BUTTON = 8;
@@ -125,16 +125,16 @@ public class TeleopInput {
 	 * Get the value of the wrist down button.
 	 * @return True if button is pressed
 	 */
-	public boolean isWristDownButtonPressed() {
-		return leftJoystick.getRawButton(WRIST_DOWN);
+	public boolean isWristOutButtonPressed() {
+		return leftJoystick.getRawButton(WRIST_OUT);
 	}
 
 	/**
 	 * Get the value of the wrist up button.
 	 * @return True if button is pressed
 	 */
-	public boolean isWristUpButtonPressed() {
-		return leftJoystick.getRawButton(WRIST_UP);
+	public boolean isWristInButtonPressed() {
+		return leftJoystick.getRawButton(WRIST_IN);
 	}
 
 	/**
