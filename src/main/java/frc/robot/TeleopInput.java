@@ -23,6 +23,8 @@ public class TeleopInput {
 	private static final int WRIST_DOWN = 4;
 	private static final int FINE_TUNING_BUTTON = 2;
 	private static final int INTAKE_TOGGLE_BUTTON = 10;
+	private static final int ARM_ZERO_BUTTON = 8;
+	private static final int WRIST_ZERO_BUTTON = 12;
 
 	/* ======================== Private variables ======================== */
 	// Input objects
@@ -141,6 +143,22 @@ public class TeleopInput {
 	 */
 	public boolean isFineTuningButtonPressed() {
 		return leftJoystick.getRawButton(FINE_TUNING_BUTTON);
+	}
+
+	/**
+	 * Get the value of the arm zero button.
+	 * @return True if button is pressed
+	 */
+	public boolean isArmZeroButtonPressed() {
+		return leftJoystick.getRawButton(ARM_ZERO_BUTTON);
+	}
+
+	/**
+	 * Get the value of the wrist zero button.
+	 * @return True if button is pressed
+	 */
+	public boolean isWristZeroButtonPressed() {
+		return leftJoystick.getRawButton(WRIST_ZERO_BUTTON);
 	}
 
 	/**

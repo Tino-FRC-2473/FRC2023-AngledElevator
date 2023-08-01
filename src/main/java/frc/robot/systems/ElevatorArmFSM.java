@@ -21,11 +21,13 @@ public class ElevatorArmFSM {
 		MIDDLE,
 		LOW,
 		UP,
-		DOWN
+		DOWN,
+		ZEROING
 	}
 
 	private static final float UP_POWER = 0.1f;
-	private static final float DOWN_POWER = 0.1f;
+	private static final float DOWN_POWER = -0.1f;
+	private static final float ZEROING_POWER = -0.01f;
 	private static final double PID_CONSTANT_ARM_P = 0.00000001;
 	private static final double PID_CONSTANT_ARM_I = 0.00000001;
 	private static final double PID_CONSTANT_ARM_D = 0.00000001;
@@ -46,6 +48,7 @@ public class ElevatorArmFSM {
 	private SparkMaxLimitSwitch limitSwitchHigh;
 	private SparkMaxLimitSwitch limitSwitchLow;
 	private double currentEncoder;
+	private boolean zeroed = true;
 
 	/* ======================== Constructor ======================== */
 	/**
@@ -125,6 +128,8 @@ public class ElevatorArmFSM {
 			case DOWN:
 				handleDownState(input);
 				break;
+			case ZEROING:
+				handleZeroingState(input);
 			default:
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
@@ -159,6 +164,8 @@ public class ElevatorArmFSM {
 					return FSMState.UP;
 				} else if (input.isElevatorDownButtonPressed()) {
 					return FSMState.DOWN;
+				} else if (input.isArmZeroButtonPressed()) {
+					return FSMState.ZEROING;
 				}
 			case HIGH:
 				if (input.isHighButtonPressed()) {
@@ -190,6 +197,13 @@ public class ElevatorArmFSM {
 				} else {
 					return FSMState.IDLE;
 				}
+			case ZEROING:
+				if (zeroed) {
+					zeroed = false;
+					return FSMState.IDLE;
+				} else {
+					return FSMState.ZEROING;
+				}
 			default:
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
@@ -218,5 +232,8 @@ public class ElevatorArmFSM {
 	}
 	private void handleDownState(TeleopInput input) {
 		pidControllerArm.setReference(DOWN_POWER, CANSparkMax.ControlType.kDutyCycle);
+	}
+	private void handleZeroingState(TeleopInput input) {
+		pidControllerArm.setReference(ZEROING_POWER, CANSparkMax.ControlType.kDutyCycle);
 	}
 }
