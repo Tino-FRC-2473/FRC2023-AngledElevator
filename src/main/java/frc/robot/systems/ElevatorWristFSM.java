@@ -1,6 +1,5 @@
 package frc.robot.systems;
 // WPILib Imports
-import edu.wpi.first.wpilibj.Timer;
 
 
 
@@ -15,7 +14,7 @@ import frc.robot.HardwareMap;
 public class ElevatorWristFSM {
 	/* ======================== Constants ======================== */
 	// FSM state definitions
-	public enum SpinningIntakeFSMState {
+	private enum FSMState {
 		MOVING_IN,
 		MOVING_OUT,
 		ZEROING,
@@ -31,7 +30,7 @@ public class ElevatorWristFSM {
 	private static final float MAX_DOWN_POWER = -0.2f;
 
 	/* ======================== Private variables ======================== */
-	private SpinningIntakeFSMState currentState;
+	private FSMState currentState;
 	// Hardware devices should be owned by one and only one system. They must
 	// be private to their owner system and may not be used elsewhere.
 	private CANSparkMax wristMotor;
@@ -46,10 +45,10 @@ public class ElevatorWristFSM {
 		wristMotor = new CANSparkMax(HardwareMap.CAN_ID_WRIST_MOTOR,
 				CANSparkMax.MotorType.kBrushless);
 		pidControllerWrist = wristMotor.getPIDController();
-		pidControllerWrist.setP(PID_CONSTANT_ARM_P);
-		pidControllerWrist.setI(PID_CONSTANT_ARM_I);
-		pidControllerArm.setD(PID_CONSTANT_ARM_D);
-		pidControllerArm.setOutputRange(MAX_DOWN_POWER, MAX_UP_POWER);
+		pidControllerWrist.setP(PID_CONSTANT_WRIST_P);
+		pidControllerWrist.setI(PID_CONSTANT_WRIST_I);
+		pidControllerWrist.setD(PID_CONSTANT_WRIST_D);
+		pidControllerWrist.setOutputRange(MAX_DOWN_POWER, MAX_UP_POWER);
 		// Reset state machine
 		reset();
 	}
@@ -108,67 +107,12 @@ public class ElevatorWristFSM {
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
 
-			currentState = nextState(input);
-
-			currentTime = Timer.getFPGATimestamp();
-			timeTaken = currentTime - begin;
-			if (timeTaken > OVERRUN_THRESHOLD) {
-				System.out.println("ALERT ALERT SPINNING INTAKE nextState " + timeTaken);
-				System.out.println("intake state" + currentState);
-			}
-		} else {
-			SmartDashboard.putBoolean("disabled", true);
-		}
-		double currentTime = Timer.getFPGATimestamp();
-		double timeTaken = currentTime - begin;
+		currentState = nextState(input);
 		//Robot.getStringLog().append("spinning intake ending");
 		//Robot.getStringLog().append("Time taken for loop: " + timeTaken);
 	}
-	/**
-	 * Run given state and return if state is complete.
-	 * @param state SpinningIntakeFSMState state gives the state that the intakefsm is in
-	 * @return Boolean that returns if given state is complete
-	 */
-	public boolean updateAutonomous(SpinningIntakeFSMState state) {
-		isMotorAllowed = true;
-		switch (state) {
-			case START_STATE:
-				handleStartState();
-				break;
-			case IDLE_SPINNING:
-				handleIdleSpinningState();
-				break;
-			case IDLE_STOP:
-				handleIdleStopState();
-				break;
-			case RELEASE:
-				handleReleaseState(null);
-				break;
-			default:
-				throw new IllegalStateException("Invalid state: " + state.toString());
-		}
-		switch (state) {
-			case START_STATE:
-				return true;
-			case IDLE_SPINNING:
-				return true;
-			case IDLE_STOP:
-				return true;
-			case RELEASE:
-				return timer.hasElapsed(1);
-			default:
-				throw new IllegalStateException("Invalid state: " + currentState.toString());
-		}
-	}
 
 	/*-------------------------NON HANDLER METHODS ------------------------- */
-	/**
-	 * Returns the type of object currently in the grabber.
-	 * @return int 0 1 or 2 for nothing, cone, cube
-	 */
-	public static ItemType getObjectType() {
-		return itemType;
-	}
 	/* ======================== Private methods ======================== */
 	/**
 	 * Decide the next state to transition to. This is a function of the inputs
@@ -181,7 +125,7 @@ public class ElevatorWristFSM {
 	 */
 	private SpinningIntakeFSMState nextState(TeleopInput input) {
 		if (input == null) {
-			return SpinningIntakeFSMState.START_STATE;
+			return SpinningIntakeFSMState.IDLE_STATE;
 		}
 		switch (currentState) {
 			case START_STATE:
