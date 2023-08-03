@@ -58,7 +58,7 @@ public class ElevatorWristFSM {
 	 * Return current FSM state.
 	 * @return Current FSM state
 	 */
-	public SpinningIntakeFSMState getCurrentState() {
+	public FSMState getCurrentState() {
 		return currentState;
 	}
 	/**
@@ -70,7 +70,7 @@ public class ElevatorWristFSM {
 	 * Ex. if the robot is enabled, disabled, then reenabled.
 	 */
 	public void reset() {
-		currentState = SpinningIntakeFSMState.IDLE;
+		currentState = FSMState.IDLE;
 		// Call one tick of update to ensure outputs reflect start state
 		update(null);
 	}
@@ -123,48 +123,34 @@ public class ElevatorWristFSM {
 	 *        the robot is in autonomous mode.
 	 * @return FSM state for the next iteration
 	 */
-	private SpinningIntakeFSMState nextState(TeleopInput input) {
+	private FSMState nextState(TeleopInput input) {
 		if (input == null) {
-			return SpinningIntakeFSMState.IDLE_STATE;
+			return FSMState.IDLE;
 		}
 		switch (currentState) {
 			case START_STATE:
-				return SpinningIntakeFSMState.IDLE_SPINNING;
+				return FSMState.IDLE_SPINNING;
 			case IDLE_SPINNING:
 				if (input.isReleaseButtonPressed()) {
-					return SpinningIntakeFSMState.RELEASE;
+					return FSMState.RELEASE;
 				}
 				if (needsReset && isMotorAllowed && toggleUpdate) {
 					timer.reset();
 					timer.start();
 					needsReset = false;
 				}
-				if (timer.hasElapsed(TIME_RESET_CURRENT)) {
-					currLogs[tick % AVERAGE_SIZE] = spinnerMotor.getOutputCurrent();
-					tick++;
-
-					double avg = 0;
-					for (int i = 0; i < AVERAGE_SIZE; i++) {
-						avg += currLogs[i];
-					}
-					avg /= AVERAGE_SIZE;
-
-					if (avg > CURRENT_THRESHOLD) {
-						return SpinningIntakeFSMState.IDLE_STOP;
-					}
-				}
-				return SpinningIntakeFSMState.IDLE_SPINNING;
+				return FSMState.IDLE_SPINNING;
 			case IDLE_STOP:
 				if (input.isReleaseButtonPressed()) {
-					return SpinningIntakeFSMState.RELEASE;
+					return FSMState.RELEASE;
 				}
-				return SpinningIntakeFSMState.IDLE_STOP;
+				return FSMState.IDLE_STOP;
 			case RELEASE:
 				if (!input.isReleaseButtonPressed()) {
 					needsReset = true;
-					return SpinningIntakeFSMState.IDLE_SPINNING;
+					return FSMState.IDLE_SPINNING;
 				}
-				return SpinningIntakeFSMState.RELEASE;
+				return FSMState.RELEASE;
 			default:
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
@@ -173,19 +159,21 @@ public class ElevatorWristFSM {
 	/* ------------------------ FSM state handlers ------------------------ */
 	/**
 	 * Handle behavior in states.
+	 * @param input Global TeleopInput if robot in teleop mode or null if
+	 * the robot is in autonomous mode.
 	 */
-	private void handleStartState() {
-
+	private void handleIdleState(TeleopInput input) {
+		wristMotor.set(0);
 	}
-	private void handleIdleSpinningState() {
+	private void handleMovingInState(TeleopInput input) {
 		if (isMotorAllowed) {
 			spinnerMotor.set(INTAKE_SPEED);
 		}
 	}
-	private void handleIdleStopState() {
+	private void handleMovingOutState(TeleopInput input) {
 		spinnerMotor.set(KEEP_SPEED);
 	}
-	private void handleReleaseState(TeleopInput input) {
+	private void handleZeroingState(TeleopInput input) {
 		if (input == null) {
 			if (!hasTimerStarted) {
 				timer.reset();

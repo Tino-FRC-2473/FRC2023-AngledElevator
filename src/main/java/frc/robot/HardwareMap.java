@@ -13,6 +13,7 @@ public final class HardwareMap {
 	public static final int CAN_ID_SPARK_DRIVE_FRONT_LEFT = 3;
 	public static final int CAN_ID_SPARK_DRIVE_BACK_LEFT = 4;
 	public static final int CAN_ID_ARM = 5;
+	public static final int CAN_ID_WRIST_MOTOR = 5;
 	public static final int CAN_ID_SPINNER_MOTOR = 40;
 
 	// Pneumatics channel numbers
