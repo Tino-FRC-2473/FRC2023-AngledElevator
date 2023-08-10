@@ -34,15 +34,18 @@ public class EveryBotIntakeFSM {
 	private static final double RELEASE_SPEED = -1; //DONT FORGET -
 	private static final double RELEASE_SPEED_LOW = -0.3;
 	private static final double CURRENT_THRESHOLD = 20;
+	private static final double BASE_THRESHOLD = 100;             
 	private static final double TIME_RESET_CURRENT = 0.5;
 	private static final int MIN_RELEASE_DISTANCE = 800;
 	private static final int AVERAGE_SIZE = 10;
 	private static final double OVERRUN_THRESHOLD = 0.007;
+	private static final double FLIP_THRESHOLD = 50;
 	//variable for armFSM, 0 means no object, 1 means cone, 2 means cube
 	private static ItemType itemType = ItemType.EMPTY;
 	private boolean isMotorAllowed = false;
 	private boolean toggleUpdate = true;
 	private boolean needsReset = true;
+	private boolean isIntakeUP = false;
 	private int tick = 0;
 	private boolean hasTimerStarted = false;
 	private double[] currLogsCone = new double[AVERAGE_SIZE];
@@ -55,7 +58,9 @@ public class EveryBotIntakeFSM {
 	// be private to their owner system and may not be used elsewhere.
 	private CANSparkMax spinnerMotorCone;
     private CANSparkMax spinnerMotorCube;   
+	private CANSparkMax flipMotor;
 	private Timer timer;
+	private ElevatorArmFSM arm;
 	/* ======================== Constructor ======================== */
 	/**
 	 * Create FSMSystem and initialize to starting state. Also perform any
@@ -63,10 +68,13 @@ public class EveryBotIntakeFSM {
 	 * the constructor is called only once when the robot boots.
 	 */
 	public EveryBotIntakeFSM() {
+		arm = new ElevatorArmFSM();
 		timer = new Timer();
 		spinnerMotorCone = new CANSparkMax(HardwareMap.CAN_ID_SPINNER_MOTOR,
 				CANSparkMax.MotorType.kBrushless);
 		spinnerMotorCube = new CANSparkMax(HardwareMap.CAN_ID_SPINNER_MOTOR,
+				CANSparkMax.MotorType.kBrushless);
+		flipMotor = new CANSparkMax(HardwareMap.CAN_ID_SPINNER_MOTOR,
 				CANSparkMax.MotorType.kBrushless);
 		// Reset state machine
 		reset();
@@ -168,6 +176,10 @@ public class EveryBotIntakeFSM {
 		//Robot.getStringLog().append("spinning intake ending");
 		//Robot.getStringLog().append("Time taken for loop: " + timeTaken);
 	}
+	
+	public boolean getIntake(){
+		return isIntakeUP;
+	}
 	/**
 	 * Run given state and return if state is complete.
 	 * @param state SpinningIntakeFSMState state gives the state that the intakefsm is in
@@ -230,9 +242,6 @@ public class EveryBotIntakeFSM {
 		switch (currentState) {
 		
 			case INTAKING:
-				if (input.isOuttakeButtonPressed()) {
-					return SpinningIntakeFSMState.RELEASE;
-				}
 				if (needsReset && isMotorAllowed && toggleUpdate) {
 					timer.reset();
 					timer.start();
@@ -252,22 +261,45 @@ public class EveryBotIntakeFSM {
 					avgcone /= AVERAGE_SIZE;
 					avgcube /= AVERAGE_SIZE;
      
-					if (avgcone > CURRENT_THRESHOLD ) {
+					if (avgcone > CURRENT_THRESHOLD || !(input.isIntakeButtonPressed()) ) {
 						return EveryBotIntakeFSMState.IDLE_STOP;
 					}
 				}
-				return EveryBotIntakeFSMState.IDLE_SPINNIN;
+				return EveryBotIntakeFSMState.INTAKING;
 			case IDLE_STOP:
-				if (input.isOuttakeButtonPressed()) {
-					return EveryBotIntakeFSMState.RELEASE;
+				if (input.isOuttakeButtonPressed() && flipMotor.getEncoder().getPosition()>FLIP_THRESHOLD) {
+					return EveryBotIntakeFSMState.OUTTAKING;
 				}
-				return SpinningIntakeFSMState.IDLE_STOP;
-			case RELEASE:
-				if (!input.isOuttakeButtonPressed()) {
-					needsReset = true;
-					return SpinningIntakeFSMState.IDLE_SPINNING;
+				else if(input.isIntakeButtonPressed() && !(flipMotor.getEncoder().getPosition()>FLIP_THRESHOLD)){
+					return EveryBotIntakeFSMState.INTAKING;
 				}
-				return SpinningIntakeFSMState.RELEASE;
+				else if(input.isFlipButtonPressed() && arm.getEncoderCount() > BASE_THRESHOLD){
+					return EveryBotIntakeFSMState.IDLE_FLIPCLOCKWISE;
+				}
+			case IDLE_FLIPCLOCKWISE:
+				if(flipMotor.getEncoder().getPosition()<FLIP_THRESHOLD){
+					return EveryBotIntakeFSMState.IDLE_FLIPCLOCKWISE;
+				}else if(input.isFlipButtonPressed()){
+					return EveryBotIntakeFSMState.IDLE_FLIPCOUNTERCLOCKWISE;
+				}else if(flipMotor.getEncoder().getPosition()>FLIP_THRESHOLD){
+					return EveryBotIntakeFSMState.IDLE_STOP;
+				}
+			case IDLE_FLIPCOUNTERCLOCKWISE:
+			    if(flipMotor.getEncoder().getPosition() < 0){
+					return EveryBotIntakeFSMState.IDLE_STOP;
+				}else if(input.isFlipButtonPressed()&&arm.getEncoderCount()>BASE_THRESHOLD){
+					return EveryBotIntakeFSMState.IDLE_FLIPCLOCKWISE;
+				}
+				else{
+					return EveryBotIntakeFSMState.IDLE_FLIPCOUNTERCLOCKWISE;
+				}
+			case OUTTAKING:
+				if(input.isOuttakeButtonPressed()){
+                   return EveryBotIntakeFSMState.OUTTAKING;
+				}else{
+					return EveryBotIntakeFSMState.IDLE_STOP;
+				}
+				
 			default:
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
