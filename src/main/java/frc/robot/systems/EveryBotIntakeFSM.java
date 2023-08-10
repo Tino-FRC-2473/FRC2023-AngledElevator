@@ -11,14 +11,16 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.TeleopInput;
 import frc.robot.HardwareMap;
 
-public class SpinningIntakeFSM {
+public class EveryBotIntakeFSM {
 	/* ======================== Constants ======================== */
 	// FSM state definitions
-	public enum SpinningIntakeFSMState {
-		START_STATE,
-		IDLE_SPINNING,
-		IDLE_STOP,
-		RELEASE
+	public enum EveryBotIntakeFSMState {
+		INTAKING,
+		IDLE_FLIPCLOCKWISE,
+		IDLE_FLIPCOUNTERCLOCKWISE,
+        IDLE_STOP,
+        OUTTAKING
+		
 	}
 	// Distance definitions
 	public enum ItemType {
@@ -26,7 +28,7 @@ public class SpinningIntakeFSM {
 		CONE,
 		EMPTY
 	}
-	//FIX VALUES
+	//HAVE TO CHANGE BASED ON TEST           
 	private static final double KEEP_SPEED = 0.07;
 	private static final double INTAKE_SPEED = 0.5;
 	private static final double RELEASE_SPEED = -1; //DONT FORGET -
@@ -43,14 +45,16 @@ public class SpinningIntakeFSM {
 	private boolean needsReset = true;
 	private int tick = 0;
 	private boolean hasTimerStarted = false;
-	private double[] currLogs = new double[AVERAGE_SIZE];
+	private double[] currLogsCone = new double[AVERAGE_SIZE];
+	private double[] currLogsCube = new double[AVERAGE_SIZE];
 
 
 	/* ======================== Private variables ======================== */
-	private SpinningIntakeFSMState currentState;
+	private EveryBotIntakeFSMState currentState;
 	// Hardware devices should be owned by one and only one system. They must
 	// be private to their owner system and may not be used elsewhere.
-	private CANSparkMax spinnerMotor;
+	private CANSparkMax spinnerMotorCone;
+    private CANSparkMax spinnerMotorCube;   
 	private Timer timer;
 	/* ======================== Constructor ======================== */
 	/**
@@ -58,20 +62,22 @@ public class SpinningIntakeFSM {
 	 * one-time initialization or configuration of hardware required. Note
 	 * the constructor is called only once when the robot boots.
 	 */
-	public SpinningIntakeFSM() {
+	public EveryBotIntakeFSM() {
 		timer = new Timer();
-		spinnerMotor = new CANSparkMax(HardwareMap.CAN_ID_SPINNER_MOTOR,
+		spinnerMotorCone = new CANSparkMax(HardwareMap.CAN_ID_SPINNER_MOTOR,
+				CANSparkMax.MotorType.kBrushless);
+		spinnerMotorCube = new CANSparkMax(HardwareMap.CAN_ID_SPINNER_MOTOR,
 				CANSparkMax.MotorType.kBrushless);
 		// Reset state machine
 		reset();
-	}
+	}                        
 
 	/* ======================== Public methods ======================== */
 	/**
 	 * Return current FSM state.
 	 * @return Current FSM state
 	 */
-	public SpinningIntakeFSMState getCurrentState() {
+	public EveryBotIntakeFSMState getCurrentState() {
 		return currentState;
 	}
 	/**
@@ -83,7 +89,7 @@ public class SpinningIntakeFSM {
 	 * Ex. if the robot is enabled, disabled, then reenabled.
 	 */
 	public void reset() {
-		currentState = SpinningIntakeFSMState.START_STATE;
+		currentState = EveryBotIntakeFSMState.IDLE_STOP;
 		hasTimerStarted = false;
 		// Call one tick of update to ensure outputs reflect start state
 		update(null);
@@ -111,7 +117,7 @@ public class SpinningIntakeFSM {
 			itemType = ItemType.CONE;
 		}
 		if (toggleUpdate) {
-			SmartDashboard.putNumber("output current", spinnerMotor.getOutputCurrent());
+			SmartDashboard.putNumber("output current", spinnerMotorCone.getOutputCurrent());
 			SmartDashboard.putString("spinning intake state", currentState.toString());
 			SmartDashboard.putNumber("velocity", spinnerMotor.getEncoder().getVelocity());
 			SmartDashboard.putString("item type", itemType.toString());
@@ -217,14 +223,13 @@ public class SpinningIntakeFSM {
 	 *        the robot is in autonomous mode.
 	 * @return FSM state for the next iteration
 	 */
-	private SpinningIntakeFSMState nextState(TeleopInput input) {
+	private EveryBotIntakeFSMState nextState(TeleopInput input) {
 		if (input == null) {
 			return SpinningIntakeFSMState.START_STATE;
 		}
 		switch (currentState) {
-			case START_STATE:
-				return SpinningIntakeFSMState.IDLE_SPINNING;
-			case IDLE_SPINNING:
+		
+			case INTAKING:
 				if (input.isOuttakeButtonPressed()) {
 					return SpinningIntakeFSMState.RELEASE;
 				}
@@ -234,23 +239,27 @@ public class SpinningIntakeFSM {
 					needsReset = false;
 				}
 				if (timer.hasElapsed(TIME_RESET_CURRENT)) {
-					currLogs[tick % AVERAGE_SIZE] = spinnerMotor.getOutputCurrent();
+					currLogsCone[tick % AVERAGE_SIZE] = spinnerMotorCone.getOutputCurrent();
+					currLogsCube[tick% AVERAGE_SIZE] = spinnerMotorCube.getOutputCurrent();
 					tick++;
 
-					double avg = 0;
+					double avgcube = 0;
+					double avgcone = 0;
 					for (int i = 0; i < AVERAGE_SIZE; i++) {
-						avg += currLogs[i];
+						avgcube += currLogsCube[i];
+						avgcone += currLogsCone[i];
 					}
-					avg /= AVERAGE_SIZE;
-
-					if (avg > CURRENT_THRESHOLD) {
-						return SpinningIntakeFSMState.IDLE_STOP;
+					avgcone /= AVERAGE_SIZE;
+					avgcube /= AVERAGE_SIZE;
+     
+					if (avgcone > CURRENT_THRESHOLD ) {
+						return EveryBotIntakeFSMState.IDLE_STOP;
 					}
 				}
-				return SpinningIntakeFSMState.IDLE_SPINNING;
+				return EveryBotIntakeFSMState.IDLE_SPINNIN;
 			case IDLE_STOP:
 				if (input.isOuttakeButtonPressed()) {
-					return SpinningIntakeFSMState.RELEASE;
+					return EveryBotIntakeFSMState.RELEASE;
 				}
 				return SpinningIntakeFSMState.IDLE_STOP;
 			case RELEASE:
@@ -307,3 +316,4 @@ public class SpinningIntakeFSM {
 		isMotorAllowed = true;
 	}
 }
+

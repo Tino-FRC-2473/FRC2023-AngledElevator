@@ -82,6 +82,10 @@ public class ElevatorArmFSM {
 	public FSMState getCurrentState() {
 		return currentState;
 	}
+
+	public double getEncoderCount(){
+        return armMotor.getEncoder().getPosition();
+	}
 	/**
 	 * Reset this system to its start state. This may be called from mode init
 	 * when the robot is enabled.

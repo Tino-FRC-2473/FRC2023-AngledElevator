@@ -21,8 +21,8 @@ public class TeleopInput {
 	private static final int ELEVATOR_DOWN = 5;
 	private static final int WRIST_IN = 6;
 	private static final int WRIST_OUT = 4;
-	private static final int FINE_TUNING_BUTTON = 2;
-	private static final int INTAKE_TOGGLE_BUTTON = 10;
+	private static final int INTAKE_BUTTON = 2;
+	private static final int FLIP_BUTTON = 10;
 	private static final int ARM_ZERO_BUTTON = 8;
 	private static final int WRIST_ZERO_BUTTON = 12;
 
@@ -69,8 +69,8 @@ public class TeleopInput {
 	 * Get the value of the intake button.
 	 * @return True if button is pressed
 	 */
-	public boolean isIntakeButtonPressed() {
-		return leftJoystick.getRawButton(INTAKE_TOGGLE_BUTTON);
+	public boolean isFlipButtonPressed() {
+		return leftJoystick.getRawButton(FLIP_BUTTON);
 	}
 
 	/**
@@ -117,7 +117,7 @@ public class TeleopInput {
 	 * Get the value of the release button.
 	 * @return True if button is pressed
 	 */
-	public boolean isReleaseButtonPressed() {
+	public boolean isOuttakeButtonPressed() {
 		return leftJoystick.getTriggerPressed();
 	}
 
@@ -141,8 +141,8 @@ public class TeleopInput {
 	 * Get the value of the fine tuning button.
 	 * @return True if button is pressed
 	 */
-	public boolean isFineTuningButtonPressed() {
-		return leftJoystick.getRawButton(FINE_TUNING_BUTTON);
+	public boolean isIntakeButtonPressed() {
+		return leftJoystick.getRawButton(INTAKE_BUTTON);
 	}
 
 	/**
