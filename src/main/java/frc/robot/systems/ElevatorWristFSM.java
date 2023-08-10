@@ -7,6 +7,7 @@ package frc.robot.systems;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.SparkMaxLimitSwitch;
 // Robot Imports
 import frc.robot.TeleopInput;
 import frc.robot.HardwareMap;
@@ -28,6 +29,8 @@ public class ElevatorWristFSM {
 	private static final double PID_CONSTANT_WRIST_D = 0.00000001;
 	private static final float MAX_UP_POWER = 0.2f;
 	private static final float MAX_DOWN_POWER = -0.2f;
+	private static final double WRIST_IN_ENCODER_ROTATIONS = -1;
+	private static final double WRIST_OUT_ENCODER_ROTATIONS = 50;
 
 	/* ======================== Private variables ======================== */
 	private FSMState currentState;
@@ -35,6 +38,8 @@ public class ElevatorWristFSM {
 	// be private to their owner system and may not be used elsewhere.
 	private CANSparkMax wristMotor;
 	private SparkMaxPIDController pidControllerWrist;
+	private SparkMaxLimitSwitch wristLimitSwitch;
+	private double currentEncoder;
 	/* ======================== Constructor ======================== */
 	/**
 	 * Create FSMSystem and initialize to starting state. Also perform any
@@ -44,7 +49,11 @@ public class ElevatorWristFSM {
 	public ElevatorWristFSM() {
 		wristMotor = new CANSparkMax(HardwareMap.CAN_ID_WRIST_MOTOR,
 				CANSparkMax.MotorType.kBrushless);
+		wristLimitSwitch = wristMotor.getReverseLimitSwitch(
+				SparkMaxLimitSwitch.Type.kNormallyClosed);
+		wristLimitSwitch.enableLimitSwitch(true);
 		pidControllerWrist = wristMotor.getPIDController();
+		wristMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
 		pidControllerWrist.setP(PID_CONSTANT_WRIST_P);
 		pidControllerWrist.setI(PID_CONSTANT_WRIST_I);
 		pidControllerWrist.setD(PID_CONSTANT_WRIST_D);
@@ -71,6 +80,7 @@ public class ElevatorWristFSM {
 	 */
 	public void reset() {
 		currentState = FSMState.IDLE;
+		currentEncoder = wristMotor.getEncoder().getPosition();
 		// Call one tick of update to ensure outputs reflect start state
 		update(null);
 	}
@@ -90,6 +100,12 @@ public class ElevatorWristFSM {
 			toggleUpdate = !toggleUpdate;
 			SmartDashboard.putBoolean("Is update enabled", toggleUpdate);
 		}*/
+		if (wristLimitSwitch.isPressed()) {
+			wristMotor.getEncoder().setPosition(0);
+		}
+		if (currentState != FSMState.IDLE) {
+			currentEncoder = wristMotor.getEncoder().getPosition();
+		}
 		switch (currentState) {
 			case MOVING_IN:
 				handleMovingInState(input);
@@ -106,7 +122,9 @@ public class ElevatorWristFSM {
 			default:
 				throw new IllegalStateException("Invalid state: " + currentState.toString());
 		}
-
+		SmartDashboard.putString("Current State", currentState.toString());
+		SmartDashboard.putBoolean("Wrist Zeroed Limit Switch", wristLimitSwitch.isPressed());
+		SmartDashboard.putNumber("Wrist Encoder", wristMotor.getEncoder().getPosition());
 		currentState = nextState(input);
 		//Robot.getStringLog().append("spinning intake ending");
 		//Robot.getStringLog().append("Time taken for loop: " + timeTaken);
@@ -179,38 +197,14 @@ public class ElevatorWristFSM {
 		pidControllerWrist.setReference(currentEncoder, CANSparkMax.ControlType.kPosition);
 	}
 	private void handleMovingInState(TeleopInput input) {
-		if (isMotorAllowed) {
-			spinnerMotor.set(INTAKE_SPEED);
-		}
+		pidControllerWrist.setReference(WRIST_IN_ENCODER_ROTATIONS,
+			CANSparkMax.ControlType.kPosition);
 	}
 	private void handleMovingOutState(TeleopInput input) {
-		spinnerMotor.set(KEEP_SPEED);
+		pidControllerWrist.setReference(WRIST_OUT_ENCODER_ROTATIONS,
+			CANSparkMax.ControlType.kPosition);
 	}
 	private void handleZeroingState(TeleopInput input) {
-		if (input == null) {
-			if (!hasTimerStarted) {
-				timer.reset();
-				timer.start();
-				hasTimerStarted = true;
-			}
-		}
-		for (int i = 0; i < AVERAGE_SIZE; i++) {
-			currLogs[i] = 0;
-		}
-		if (input != null) {
-			if (itemType == ItemType.CUBE) {
-				spinnerMotor.set(RELEASE_SPEED);
-			} else {
-				spinnerMotor.set(RELEASE_SPEED_LOW);
-			}
-		} // else {
-			/*if (AutoPathChooser.getSelectedNode() == 0) {
-				spinnerMotor.set(RELEASE_SPEED_LOW);
-			} else {
-				spinnerMotor.set(RELEASE_SPEED);
-			}*/
-		//}
-		itemType = ItemType.EMPTY;
-		isMotorAllowed = true;
+		pidControllerWrist.setReference(ZEROING_SPEED, CANSparkMax.ControlType.kDutyCycle);
 	}
 }
